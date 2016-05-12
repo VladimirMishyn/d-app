@@ -4,6 +4,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 
+import java.util.List;
+
 /**
  * Created by Volodymyr on 11.05.2016.
  */
