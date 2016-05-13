@@ -3,7 +3,6 @@ package com.mishyn.app.text;
 import com.mishyn.app.db.MyMongoImpl;
 import com.mishyn.app.db.MyMongoInterface;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
@@ -23,31 +22,32 @@ public class LuceneImplementation {
     private MyMongoInterface mongo = new MyMongoImpl();
     private List<String> stopWords = new ArrayList<String>();
 
-    public LuceneImplementation(){
+    public LuceneImplementation() {
         this.stopWords = mongo.getAllStopWords();
     }
 
-
-
-    public void nGramsPrint(String text) {
+    public List<String> getNgrams(String text) {
         StringReader reader = new StringReader(text);
         StandardTokenizer source = new StandardTokenizer(Version.LUCENE_46, reader);
         TokenStream tokenStream = new StandardFilter(Version.LUCENE_46, source);
-       // StopFilter stopFilter = new StopFilter(Version.LUCENE_46, tokenStream, StopFilter.makeStopSet(Version.LUCENE_46, this.stopWords));
+        // StopFilter stopFilter = new StopFilter(Version.LUCENE_46, tokenStream, StopFilter.makeStopSet(Version.LUCENE_46, this.stopWords));
         ShingleFilter sf = new ShingleFilter(tokenStream, 2, 3);
         sf.setOutputUnigrams(true);
 
 
         CharTermAttribute charTermAttribute = sf.addAttribute(CharTermAttribute.class);
+        List<String> nGrams = new ArrayList<String>();
         try {
             sf.reset();
             while (sf.incrementToken()) {
-                System.out.println(charTermAttribute.toString());
+                // System.out.println(charTermAttribute.toString());
+                nGrams.add(charTermAttribute.toString());
             }
             sf.end();
             sf.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return nGrams;
     }
 }

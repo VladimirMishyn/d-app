@@ -7,6 +7,7 @@ import org.bson.Document;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Created by Volodymyr on 11.05.2016.
@@ -14,9 +15,13 @@ import java.util.List;
 
 public class TextExtraction {
     private static String pathToTXT = "source.txt";
-    private static String pathToStopWords = "stopwords.txt";
-
+    private static String pathToStopWords = "stopwordsI.txt";
+    private static final Pattern UNDESIRABLES = Pattern.compile("[^a-zA-Z ]");
     private List<String> stopWords = new ArrayList<String>();
+
+    private static String removeUseless(String x) {
+        return UNDESIRABLES.matcher(x).replaceAll("");
+    }
 
     public List<String> extractStopWords() {
         List<String> stopWords = new ArrayList<String>();
@@ -56,15 +61,19 @@ public class TextExtraction {
     public List<String> processDocument(String document) {
         List<String> sentences = TextAnalysis.splitTextSentencesLPNLP(document);
         List<String> result = new ArrayList<String>();
+        // MyMongoInterface mongo = new MyMongoImpl();
+        List<String> stopWords = this.getStopWords();
+        int ind = 0;
         for (String sentence : sentences) {
-            String resultSentence = " " + sentence.toLowerCase() + " ";
-            List<String> stopWords = this.getStopWords();
-
+          //  System.out.println("n-" + ind + "=" + sentence);
+            String resultSentence = " " + removeUseless(sentence.toLowerCase()) + " ";
             for (String stopword : stopWords) {
                 stopword = " " + stopword + " ";
                 resultSentence = resultSentence.replaceAll("(?i)" + stopword, " ");
             }
             result.add(resultSentence.trim());
+           // System.out.println("n-" + ind + "=" + resultSentence.trim());
+            ind++;
         }
         return result;
     }
