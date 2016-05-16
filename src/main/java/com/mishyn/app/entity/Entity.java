@@ -7,6 +7,7 @@ import java.util.List;
  * Created by Volodymyr on 13.05.2016.
  */
 public class Entity {
+    private Integer id;
     private String value;
     private String type;
     private long absFr;
@@ -67,10 +68,23 @@ public class Entity {
         this.docs = docs;
     }
 
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Entity(Integer id) {
+        this.id = id;
+    }
+
     @Override
     public String toString() {
         return "Entity{" +
-                "value='" + value + '\'' +
+                "id=" + id +
+                ", value='" + value + '\'' +
                 ", type='" + type + '\'' +
                 ", absFr=" + absFr +
                 ", docs=" + docs +

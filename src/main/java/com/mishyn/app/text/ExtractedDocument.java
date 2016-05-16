@@ -9,6 +9,7 @@ public class ExtractedDocument {
 
     private String text;
     private int id;
+    private int ngramsCount;
     private List<String> lines;
 
     public ExtractedDocument(String text, int id, List<String> lines) {
@@ -45,11 +46,20 @@ public class ExtractedDocument {
         this.lines = lines;
     }
 
+    public int getNgramsCount() {
+        return ngramsCount;
+    }
+
+    public void setNgramsCount(int ngramsCount) {
+        this.ngramsCount = ngramsCount;
+    }
+
     @Override
     public String toString() {
         return "ExtractedDocument{" +
                 "text='" + text + '\'' +
                 ", id=" + id +
+                ", ngramsCount=" + ngramsCount +
                 ", lines=" + lines +
                 '}';
     }

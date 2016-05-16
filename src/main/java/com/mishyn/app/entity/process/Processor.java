@@ -26,10 +26,33 @@ public class Processor {
         }
     }
 
+    private double tfCount(Entity entity, Map<Integer, Integer> info) {
+        double tf = 0;
+        for (EntityDocInfo entityDocInfo : entity.getDocs()) {
+            Integer infoValue = info.get(entityDocInfo.getId());
+            if (infoValue!=null) {
+                tf += (double) entityDocInfo.getLn().size() / info.get(entityDocInfo.getId());
+            } else{
+                System.out.println("bp");
+            }
+        }
+        return tf;
+    }
+
+    private double idfCount(Entity entity, long docCount) {
+        List<EntityDocInfo> entityDocInfoList = entity.getDocs();
+        double ngramApproximateCount = docCount / 3;
+        return Math.log(1 + ngramApproximateCount / (double) entityDocInfoList.size());
+    }
+
+    public double tfIdfCount(Entity entity, long docCount, Map<Integer, Integer> info) {
+        return tfCount(entity, info) * idfCount(entity, docCount);
+    }
+
     public void processIt(List<ExtractedDocument> readyDocuments) {
         //   List<ExtractedDocument> readyDocuments = mongo.getAllExtractedDocuments();
         Map<String, Entity> entityMap = new HashMap<String, Entity>();
-        long hashMapSize =0;
+        long hashMapSize = 0;
         for (ExtractedDocument ed : readyDocuments) {
             int lineNumber = 0;
             for (String line : ed.getLines()) {
@@ -66,7 +89,7 @@ public class Processor {
                 lineNumber++;
             }
         }
-      // printMap(entityMap);
+        // printMap(entityMap);
         List<Entity> list = new ArrayList<Entity>(entityMap.values());
         mongo.persistEntities(list);
     }

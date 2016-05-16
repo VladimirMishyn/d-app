@@ -6,6 +6,7 @@ import org.bson.Document;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -14,10 +15,11 @@ import java.util.regex.Pattern;
  */
 
 public class TextExtraction {
-    private static String pathToTXT = "source.txt";
+    private static String pathToTXT = "source2.txt";
     private static String pathToStopWords = "stopwordsI.txt";
     private static final Pattern UNDESIRABLES = Pattern.compile("[^a-zA-Z ]");
     private List<String> stopWords = new ArrayList<String>();
+    private static final List<String> removeFlags = new ArrayList<String>(Arrays.asList("email headlines hours", "kyodo", "free email headlines"));
 
     private static String removeUseless(String x) {
         return UNDESIRABLES.matcher(x).replaceAll("");
@@ -65,20 +67,32 @@ public class TextExtraction {
         List<String> stopWords = this.getStopWords();
         int ind = 0;
         for (String sentence : sentences) {
-          //  System.out.println("n-" + ind + "=" + sentence);
+            //  System.out.println("n-" + ind + "=" + sentence);
             String resultSentence = " " + removeUseless(sentence.toLowerCase()) + " ";
             for (String stopword : stopWords) {
                 stopword = " " + stopword + " ";
                 resultSentence = resultSentence.replaceAll("(?i)" + stopword, " ");
             }
             result.add(resultSentence.trim());
-           // System.out.println("n-" + ind + "=" + resultSentence.trim());
+            // System.out.println("n-" + ind + "=" + resultSentence.trim());
             ind++;
         }
         return result;
     }
 
+    private boolean checkStrings(List<String> ngrams) {
+        for (String ngram : ngrams) {
+            for (String removeIt : removeFlags) {
+                if (removeIt.equals(ngram)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     public List<ExtractedDocument> extractDocuments() {
+        LuceneImplementation luceneImplementation = new LuceneImplementation();
         FileInputStream fileStream = null;
         try {
             fileStream = new FileInputStream(pathToTXT);
@@ -100,9 +114,25 @@ public class TextExtraction {
                     documentText += strLine + " ";
                 } else {
                     if (stringCount != 1) {
-                        extractedDocumentsList.add(new ExtractedDocument(documentText, documentIndex, processDocument((documentText))));
-                        documentText = "";
-                        documentIndex++;
+                        ExtractedDocument extractedDocument = new ExtractedDocument(documentText, documentIndex, processDocument(documentText));
+                        int ngrams = 0;
+                        boolean addDoc = true;
+                        for (String line : extractedDocument.getLines()) {
+                            List<String> ngramsList = luceneImplementation.getNgrams(line);
+                            addDoc = checkStrings(ngramsList);
+                            if (!addDoc) {
+                                break;
+                            }
+                            ngrams = ngrams + ngramsList.size();
+                        }
+                        if (addDoc) {
+                            extractedDocument.setNgramsCount(ngrams);
+                            extractedDocumentsList.add(extractedDocument);
+                            documentText = "";
+                            documentIndex++;
+                        } else {
+                            documentText = "";
+                        }
                     }
                 }
             }
@@ -124,11 +154,13 @@ public class TextExtraction {
         MongoCollection collection = mv.getMongoCollection();
         collection.drop();
         //  List<ExtractedDocument> extractedDocumentList = extractDocumentsFromFile();
+
         int countPersisted = 0;
         for (ExtractedDocument ed : extractedDocumentList) {
             Document doc = new Document();
             doc.append("text", ed.getText());
             doc.append("counter", ed.getId());
+            doc.append("ngrams", ed.getNgramsCount());
             int index = 0;
             List<Document> linesDocuments = new ArrayList<Document>();
             for (String line : ed.getLines()) {

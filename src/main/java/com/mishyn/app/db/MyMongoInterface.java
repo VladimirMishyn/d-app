@@ -17,9 +17,15 @@ public interface MyMongoInterface {
 
     public ExtractedDocument getExtractedDocumentById(int id);
 
+    public Entity getEntityById(int id);
+
+    public long getEntitiesCount();
+
     public List<ExtractedDocument> getExtractedDocumentInRange(int start, int end);
 
     public long getAllExtractedDocumentsCount();
 
     public void persistEntities(List<Entity> allEntities);
+
+    public void updateEntities(Entity entity, double tfidf);
 }

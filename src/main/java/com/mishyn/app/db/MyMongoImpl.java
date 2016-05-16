@@ -18,6 +18,9 @@ import static java.util.Arrays.asList;
  * Created by Volodymyr on 12.05.2016.
  */
 public class MyMongoImpl implements MyMongoInterface {
+
+    private MongoCollection defaultCollection = new MongoWorker("grams").getMongoCollection();
+
     @Override
     public List<String> getAllStopWords() {
         final List<String> words = new ArrayList<String>();
@@ -52,6 +55,7 @@ public class MyMongoImpl implements MyMongoInterface {
                 ExtractedDocument ed = new ExtractedDocument();
                 ed.setText(document.getString("text"));
                 ed.setId(document.getInteger("counter"));
+                ed.setNgramsCount(document.getInteger("ngrams"));
                 List<Document> lines = (List<Document>) document.get("lines");
                 int index = 0;
                 List<String> docLines = new ArrayList<String>();
@@ -79,6 +83,7 @@ public class MyMongoImpl implements MyMongoInterface {
             public void apply(Document document) {
                 ed.setText(document.getString("text"));
                 ed.setId(document.getInteger("counter"));
+                ed.setNgramsCount(document.getInteger("ngrams"));
                 List<Document> lines = (List<Document>) document.get("lines");
                 int index = 0;
                 List<String> docLines = new ArrayList<String>();
@@ -91,6 +96,43 @@ public class MyMongoImpl implements MyMongoInterface {
             }
         });
         return ed;
+    }
+
+    @Override
+    public Entity getEntityById(int id) {
+        final Entity entity = new Entity();
+        if (defaultCollection != null) {
+            FindIterable<Document> iterable = defaultCollection.find(new Document("_id", id));
+            iterable.forEach(new Block<Document>() {
+                @Override
+                public void apply(Document document) {
+                    entity.setId(new Integer(document.getLong("_id").toString()));
+                    entity.setValue(document.getString("value"));
+                    entity.setType(document.getString("type"));
+                    entity.setAbsFr(document.getLong("absfr").longValue());
+                    List<Document> occurrences = (List<Document>) document.get("docs");
+                    List<EntityDocInfo> entityDocInfoList = new ArrayList<EntityDocInfo>();
+                    for (Document oc : occurrences) {
+                        EntityDocInfo entityDocInfo = new EntityDocInfo();
+                        entityDocInfo.setId(oc.getInteger("id"));
+                        entityDocInfo.setLn((List<String>) oc.get("lines"));
+                        entityDocInfoList.add(entityDocInfo);
+                    }
+                    entity.setDocs(entityDocInfoList);
+
+                }
+            });
+        } else {
+            System.out.println("ERROR");
+        }
+        return entity;
+    }
+
+    @Override
+    public long getEntitiesCount() {
+        MongoWorker mv = new MongoWorker("grams");
+        MongoCollection collection = mv.getMongoCollection();
+        return collection.count();
     }
 
     @Override
@@ -107,6 +149,7 @@ public class MyMongoImpl implements MyMongoInterface {
                 ExtractedDocument ed = new ExtractedDocument();
                 ed.setText(document.getString("text"));
                 ed.setId(document.getInteger("counter"));
+                ed.setNgramsCount(document.getInteger("ngrams"));
                 List<Document> lines = (List<Document>) document.get("lines");
                 int index = 0;
                 List<String> docLines = new ArrayList<String>();
@@ -134,8 +177,10 @@ public class MyMongoImpl implements MyMongoInterface {
         MongoWorker mv = new MongoWorker("grams");
         MongoCollection collection = mv.getMongoCollection();
         collection.drop();
+        long counter = 0;
         for (Entity entity : allEntities) {
             Document document = new Document();
+            document.append("_id", counter);
             document.append("value", entity.getValue());
             document.append("type", entity.getType());
             document.append("absfr", entity.getAbsFr());
@@ -148,9 +193,17 @@ public class MyMongoImpl implements MyMongoInterface {
             }
             document.append("docs", asList(docInfo.toArray()));
             collection.insertOne(document);
+            counter++;
         }
+    }
 
-
+    @Override
+    public void updateEntities(Entity entity, double tfidf) {
+        if (defaultCollection != null) {
+            defaultCollection.updateOne(new Document("_id", entity.getId()), new Document("$set", new Document("tfidf", tfidf)));
+        } else {
+            System.out.println("ERROR");
+        }
     }
 
 }
