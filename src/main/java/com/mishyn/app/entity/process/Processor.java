@@ -7,6 +7,7 @@ import com.mishyn.app.entity.EntityDocInfo;
 import com.mishyn.app.text.ExtractedDocument;
 import com.mishyn.app.text.LuceneImplementation;
 
+import java.io.FileNotFoundException;
 import java.util.*;
 
 /**
@@ -30,9 +31,9 @@ public class Processor {
         double tf = 0;
         for (EntityDocInfo entityDocInfo : entity.getDocs()) {
             Integer infoValue = info.get(entityDocInfo.getId());
-            if (infoValue!=null) {
+            if (infoValue != null) {
                 tf += (double) entityDocInfo.getLn().size() / info.get(entityDocInfo.getId());
-            } else{
+            } else {
                 System.out.println("bp");
             }
         }
@@ -92,5 +93,81 @@ public class Processor {
         // printMap(entityMap);
         List<Entity> list = new ArrayList<Entity>(entityMap.values());
         mongo.persistEntities(list);
+    }
+
+    public void countForDoc(List<String> ngrams, Map<String, Entity> entityMap, Map<String, Integer> countMap) {
+        Map<Integer, String> index = new HashMap<Integer, String>();
+        Map<String, Double> tfIdf = new HashMap<String, Double>();
+        int k = 0;
+        for (String s : ngrams) {
+            index.put(k, s);
+            tfIdf.put(s, entityMap.get(s).getTfidf());
+            k++;
+        }
+
+        for (int i = 0; i < ngrams.size() - 1; i++) {
+            String base = index.get(i);
+            double baseTfIdf = tfIdf.get(base);
+            double toCheckWithBase = 0;
+            double visibilityMax = 0;
+            int m = i + 1;
+            while (toCheckWithBase < baseTfIdf) {
+                String currentEntity = index.get(m);
+                if (currentEntity != null) {
+                    toCheckWithBase = tfIdf.get(currentEntity);
+                    if (toCheckWithBase > visibilityMax) {
+                        visibilityMax = toCheckWithBase;
+                        Integer counterOfCurrent = countMap.get(currentEntity);
+                        Integer countOfBase = countMap.get(base);
+                        countMap.put(currentEntity, new Integer(counterOfCurrent.intValue() + 1));
+                        countMap.put(base, new Integer(countOfBase.intValue() + 1));
+                    }
+                } else {
+                    break;
+                }
+                m++;
+            }
+        }
+    }
+
+    public void HVG(List<ExtractedDocument> extractedDocumentList, List<Entity> entityList) throws FileNotFoundException {
+        Map<String, Entity> entityMap = new HashMap<String, Entity>();
+        Map<String, Integer> countMap = new HashMap<String, Integer>();
+        System.out.println("base initiation");
+        for (Entity entity : entityList) {
+            entityMap.put(entity.getValue(), entity);
+            countMap.put(entity.getValue(), 0);
+        }
+        System.out.println("base initiation finish");
+        for (ExtractedDocument ed : extractedDocumentList) {
+            List<String> ngrams = new ArrayList<String>();
+            for (String line : ed.getLines()) {
+                ngrams.addAll(lucene.getNgrams(line));
+            }
+            List<String> words = new ArrayList<String>();
+            List<String> bigram = new ArrayList<String>();
+            List<String> threegram = new ArrayList<String>();
+            for (String ngram : ngrams) {
+                String[] splited = ngram.split("\\s+");
+                switch (splited.length) {
+                    case 1:
+                        words.add(ngram);
+                        break;
+                    case 2:
+                        bigram.add(ngram);
+                        break;
+                    case 3:
+                        threegram.add(ngram);
+                        break;
+                }
+            }
+            countForDoc(words, entityMap, countMap);
+            countForDoc(bigram, entityMap, countMap);
+            countForDoc(threegram, entityMap, countMap);
+        }
+        System.out.println("counted-persisting");
+        for (Entity e : entityList) {
+            mongo.updateHVG(e, countMap.get(e.getValue()));
+        }
     }
 }

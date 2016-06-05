@@ -10,6 +10,8 @@ public class Entity {
     private Integer id;
     private String value;
     private String type;
+    private long hvgv;
+    private double tfidf;
     private long absFr;
     private List<EntityDocInfo> docs = new ArrayList<EntityDocInfo>();
 
@@ -21,6 +23,13 @@ public class Entity {
         this.type = type;
         this.absFr = absFr;
         this.docs = docs;
+    }
+
+    public Entity(Entity other){
+        this.value = other.getValue();
+        this.type = other.getType();
+        this.absFr = other.getAbsFr();
+        this.docs = other.getDocs();
     }
 
     public EntityDocInfo getThisDocInfo(Integer id) {
@@ -78,6 +87,22 @@ public class Entity {
 
     public Entity(Integer id) {
         this.id = id;
+    }
+
+    public long getHvgv() {
+        return hvgv;
+    }
+
+    public void setHvgv(long hvgv) {
+        this.hvgv = hvgv;
+    }
+
+    public double getTfidf() {
+        return tfidf;
+    }
+
+    public void setTfidf(double tfidf) {
+        this.tfidf = tfidf;
     }
 
     @Override

@@ -110,6 +110,7 @@ public class MyMongoImpl implements MyMongoInterface {
                     entity.setValue(document.getString("value"));
                     entity.setType(document.getString("type"));
                     entity.setAbsFr(document.getLong("absfr").longValue());
+                    entity.setTfidf(document.getDouble("tfidf"));
                     List<Document> occurrences = (List<Document>) document.get("docs");
                     List<EntityDocInfo> entityDocInfoList = new ArrayList<EntityDocInfo>();
                     for (Document oc : occurrences) {
@@ -126,6 +127,38 @@ public class MyMongoImpl implements MyMongoInterface {
             System.out.println("ERROR");
         }
         return entity;
+    }
+
+    @Override
+    public List<Entity> getAllEntities() {
+        final List<Entity> entites = new ArrayList<Entity>();
+        if (defaultCollection != null) {
+            FindIterable<Document> iterable = defaultCollection.find();
+            iterable.forEach(new Block<Document>() {
+                @Override
+                public void apply(Document document) {
+                    Entity entity = new Entity();
+                    entity.setId(new Integer(document.getLong("_id").toString()));
+                    entity.setValue(document.getString("value"));
+                    entity.setType(document.getString("type"));
+                    entity.setAbsFr(document.getLong("absfr").longValue());
+                    entity.setTfidf(document.getDouble("tfidf"));
+                    List<Document> occurrences = (List<Document>) document.get("docs");
+                    List<EntityDocInfo> entityDocInfoList = new ArrayList<EntityDocInfo>();
+                    for (Document oc : occurrences) {
+                        EntityDocInfo entityDocInfo = new EntityDocInfo();
+                        entityDocInfo.setId(oc.getInteger("id"));
+                        entityDocInfo.setLn((List<String>) oc.get("lines"));
+                        entityDocInfoList.add(entityDocInfo);
+                    }
+                    entity.setDocs(entityDocInfoList);
+                    entites.add(entity);
+                }
+            });
+        } else {
+            System.out.println("ERROR");
+        }
+        return entites;
     }
 
     @Override
@@ -201,6 +234,15 @@ public class MyMongoImpl implements MyMongoInterface {
     public void updateEntities(Entity entity, double tfidf) {
         if (defaultCollection != null) {
             defaultCollection.updateOne(new Document("_id", entity.getId()), new Document("$set", new Document("tfidf", tfidf)));
+        } else {
+            System.out.println("ERROR");
+        }
+    }
+
+    @Override
+    public void updateHVG(Entity key, Integer hvg) {
+        if (defaultCollection != null) {
+            defaultCollection.updateOne(new Document("_id", key.getId()), new Document("$set", new Document("hvg", hvg)));
         } else {
             System.out.println("ERROR");
         }

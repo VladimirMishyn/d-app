@@ -19,6 +19,8 @@ public interface MyMongoInterface {
 
     public Entity getEntityById(int id);
 
+    public List<Entity> getAllEntities();
+
     public long getEntitiesCount();
 
     public List<ExtractedDocument> getExtractedDocumentInRange(int start, int end);
@@ -28,4 +30,6 @@ public interface MyMongoInterface {
     public void persistEntities(List<Entity> allEntities);
 
     public void updateEntities(Entity entity, double tfidf);
+
+    public void updateHVG(Entity key, Integer hvg);
 }
