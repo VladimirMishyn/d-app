@@ -31,5 +31,11 @@ public interface MyMongoInterface {
 
     public void updateEntities(Entity entity, double tfidf);
 
+    public void updateDispersion(Entity entity, double dispersion);
+
     public void updateHVG(Entity key, Integer hvg);
+
+    public void updateHVGT(Entity key, Integer hvg);
+
+    public void updateHVGD(Entity key, Integer hvg);
 }

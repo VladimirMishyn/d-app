@@ -111,6 +111,7 @@ public class MyMongoImpl implements MyMongoInterface {
                     entity.setType(document.getString("type"));
                     entity.setAbsFr(document.getLong("absfr").longValue());
                     entity.setTfidf(document.getDouble("tfidf"));
+                    entity.setDisp(document.getDouble("disp"));
                     List<Document> occurrences = (List<Document>) document.get("docs");
                     List<EntityDocInfo> entityDocInfoList = new ArrayList<EntityDocInfo>();
                     for (Document oc : occurrences) {
@@ -143,6 +144,7 @@ public class MyMongoImpl implements MyMongoInterface {
                     entity.setType(document.getString("type"));
                     entity.setAbsFr(document.getLong("absfr").longValue());
                     entity.setTfidf(document.getDouble("tfidf"));
+                    entity.setDisp(document.getDouble("disp"));
                     List<Document> occurrences = (List<Document>) document.get("docs");
                     List<EntityDocInfo> entityDocInfoList = new ArrayList<EntityDocInfo>();
                     for (Document oc : occurrences) {
@@ -240,9 +242,36 @@ public class MyMongoImpl implements MyMongoInterface {
     }
 
     @Override
+    public void updateDispersion(Entity entity, double dispersion) {
+        if (defaultCollection != null) {
+            defaultCollection.updateOne(new Document("_id", entity.getId()), new Document("$set", new Document("disp", dispersion)));
+        } else {
+            System.out.println("ERROR");
+        }
+    }
+
+    @Override
     public void updateHVG(Entity key, Integer hvg) {
         if (defaultCollection != null) {
             defaultCollection.updateOne(new Document("_id", key.getId()), new Document("$set", new Document("hvg", hvg)));
+        } else {
+            System.out.println("ERROR");
+        }
+    }
+
+    @Override
+    public void updateHVGT(Entity key, Integer hvg) {
+        if (defaultCollection != null) {
+            defaultCollection.updateOne(new Document("_id", key.getId()), new Document("$set", new Document("hvgt", hvg)));
+        } else {
+            System.out.println("ERROR");
+        }
+    }
+
+    @Override
+    public void updateHVGD(Entity key, Integer hvg) {
+        if (defaultCollection != null) {
+            defaultCollection.updateOne(new Document("_id", key.getId()), new Document("$set", new Document("hvgd", hvg)));
         } else {
             System.out.println("ERROR");
         }

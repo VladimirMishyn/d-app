@@ -5,7 +5,6 @@ import com.mishyn.app.db.MyMongoInterface;
 import com.mishyn.app.entity.Entity;
 import com.mishyn.app.entity.process.Processor;
 import com.mishyn.app.text.ExtractedDocument;
-import com.mishyn.app.text.TextExtraction;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,9 +37,9 @@ public class App {
         System.out.println("finished getting docs");
         List<Entity> entityList = mongo.getAllEntities();
         System.out.println("finished getting entities");
-        Processor processor = new Processor();
-        processor.HVG(extractedDocumentList,entityList);
 
+        Processor processor = new Processor();
+        processor.HVG(extractedDocumentList, entityList, "d");
 
 //        LuceneImplementation lImp = new LuceneImplementation();
 //        for (String sentence : TextAnalysis.splitTextSentencesSNLP(ed.getWithoutSWText())) {

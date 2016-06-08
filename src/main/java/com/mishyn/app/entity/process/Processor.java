@@ -7,7 +7,6 @@ import com.mishyn.app.entity.EntityDocInfo;
 import com.mishyn.app.text.ExtractedDocument;
 import com.mishyn.app.text.LuceneImplementation;
 
-import java.io.FileNotFoundException;
 import java.util.*;
 
 /**
@@ -95,7 +94,7 @@ public class Processor {
         mongo.persistEntities(list);
     }
 
-    public void countForDoc(List<String> ngrams, Map<String, Entity> entityMap, Map<String, Integer> countMap) {
+    public void countHVGTForDoc(List<String> ngrams, Map<String, Entity> entityMap, Map<String, Integer> countMap) {
         Map<Integer, String> index = new HashMap<Integer, String>();
         Map<String, Double> tfIdf = new HashMap<String, Double>();
         int k = 0;
@@ -130,7 +129,132 @@ public class Processor {
         }
     }
 
-    public void HVG(List<ExtractedDocument> extractedDocumentList, List<Entity> entityList) throws FileNotFoundException {
+    public void countHVGDForDoc(List<String> ngrams, Map<String, Entity> entityMap, Map<String, Integer> countMap) {
+        Map<Integer, String> index = new HashMap<Integer, String>();
+        Map<String, Double> disp = new HashMap<String, Double>();
+        int k = 0;
+        for (String s : ngrams) {
+            index.put(k, s);
+            disp.put(s, entityMap.get(s).getDisp());
+            k++;
+        }
+
+        for (int i = 0; i < ngrams.size() - 1; i++) {
+            String base = index.get(i);
+            double baseDisp = disp.get(base);
+            double toCheckWithBase = 0;
+            double visibilityMax = 0;
+            int m = i + 1;
+            while (toCheckWithBase < baseDisp) {
+                String currentEntity = index.get(m);
+                if (currentEntity != null) {
+                    toCheckWithBase = disp.get(currentEntity);
+                    if (toCheckWithBase > visibilityMax) {
+                        visibilityMax = toCheckWithBase;
+                        Integer counterOfCurrent = countMap.get(currentEntity);
+                        Integer countOfBase = countMap.get(base);
+                        countMap.put(currentEntity, new Integer(counterOfCurrent.intValue() + 1));
+                        countMap.put(base, new Integer(countOfBase.intValue() + 1));
+                    }
+                } else {
+                    break;
+                }
+                m++;
+            }
+        }
+    }
+
+    public static double dispersionCount(List<Integer> array) {
+        double avereged = 0;
+        double avereged2 = 0;
+        int length = array.size();
+
+        for (Integer d : array) {
+            avereged = avereged + d.intValue();
+            avereged2 = avereged2 + Math.pow(d.intValue(), 2);
+        }
+        avereged = avereged / length;
+        avereged2 = avereged2 / length;
+        return Math.sqrt(avereged2 - Math.pow(avereged, 2)) / avereged;
+    }
+
+    static ArrayList<Integer> indexOfAll(String obj, ArrayList<String> list) {
+        ArrayList<Integer> indexList = new ArrayList<Integer>();
+        for (int i = 0; i < list.size(); i++)
+            if (obj.equals(list.get(i)))
+                indexList.add(i);
+        return indexList;
+    }
+
+
+    static List<Integer> countDistances(ArrayList<Integer> arrayList) {
+        List<Integer> distances = new ArrayList<Integer>();
+        int counter = arrayList.size() - 1;
+        while (counter > 0) {
+            distances.add(arrayList.get(counter) - arrayList.get(counter - 1));
+            counter--;
+        }
+        return distances;
+    }
+
+    public void countDispersionForDoc(List<String> ngrams, Map<String, Double> countMap) {
+        List<String> used = new ArrayList<String>();
+        for (String s : ngrams) {
+            if (!used.contains(s)) {
+                Double current = countMap.get(s);
+                ArrayList<Integer> indexes = indexOfAll(s, (ArrayList<String>) ngrams);
+                if (indexes.size() > 1) {
+                    List<Integer> distances = countDistances(indexes);
+                    Double dispersion = dispersionCount(distances);
+                    countMap.put(s, current + dispersion);
+                }
+            }
+            used.add(s);
+        }
+    }
+
+    public void dispersion(List<ExtractedDocument> extractedDocumentList, List<Entity> entityList) {
+        Map<String, Entity> entityMap = new HashMap<String, Entity>();
+        Map<String, Double> countMap = new HashMap<String, Double>();
+        System.out.println("base initiation");
+        for (Entity entity : entityList) {
+            entityMap.put(entity.getValue(), entity);
+            countMap.put(entity.getValue(), (double) 0);
+        }
+        System.out.println("base initiation finish");
+        for (ExtractedDocument ed : extractedDocumentList) {
+            List<String> ngrams = new ArrayList<String>();
+            for (String line : ed.getLines()) {
+                ngrams.addAll(lucene.getNgrams(line));
+            }
+            List<String> words = new ArrayList<String>();
+            List<String> bigram = new ArrayList<String>();
+            List<String> threegram = new ArrayList<String>();
+            for (String ngram : ngrams) {
+                String[] splited = ngram.split("\\s+");
+                switch (splited.length) {
+                    case 1:
+                        words.add(ngram);
+                        break;
+                    case 2:
+                        bigram.add(ngram);
+                        break;
+                    case 3:
+                        threegram.add(ngram);
+                        break;
+                }
+            }
+            countDispersionForDoc(words, countMap);
+            countDispersionForDoc(bigram, countMap);
+            countDispersionForDoc(threegram, countMap);
+        }
+        System.out.println("counted-persisting");
+        for (Entity e : entityList) {
+            mongo.updateDispersion(e, countMap.get(e.getValue()));
+        }
+    }
+
+    public void HVG(List<ExtractedDocument> extractedDocumentList, List<Entity> entityList, String param) {
         Map<String, Entity> entityMap = new HashMap<String, Entity>();
         Map<String, Integer> countMap = new HashMap<String, Integer>();
         System.out.println("base initiation");
@@ -161,13 +285,23 @@ public class Processor {
                         break;
                 }
             }
-            countForDoc(words, entityMap, countMap);
-            countForDoc(bigram, entityMap, countMap);
-            countForDoc(threegram, entityMap, countMap);
+            if (param.equals("t")) {
+                countHVGTForDoc(words, entityMap, countMap);
+                countHVGTForDoc(bigram, entityMap, countMap);
+                countHVGTForDoc(threegram, entityMap, countMap);
+            } else {
+                countHVGDForDoc(words, entityMap, countMap);
+                countHVGDForDoc(bigram, entityMap, countMap);
+                countHVGDForDoc(threegram, entityMap, countMap);
+            }
         }
         System.out.println("counted-persisting");
         for (Entity e : entityList) {
-            mongo.updateHVG(e, countMap.get(e.getValue()));
+            if (param.equals("t")) {
+                mongo.updateHVGT(e, countMap.get(e.getValue()));
+            } else {
+                mongo.updateHVGD(e, countMap.get(e.getValue()));
+            }
         }
     }
 }

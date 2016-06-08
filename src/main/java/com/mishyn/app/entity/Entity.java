@@ -10,8 +10,10 @@ public class Entity {
     private Integer id;
     private String value;
     private String type;
-    private long hvgv;
+    private long hvgt;
+    private long hvgd;
     private double tfidf;
+    private double disp;
     private long absFr;
     private List<EntityDocInfo> docs = new ArrayList<EntityDocInfo>();
 
@@ -89,12 +91,28 @@ public class Entity {
         this.id = id;
     }
 
-    public long getHvgv() {
-        return hvgv;
+    public long getHvgt() {
+        return hvgt;
     }
 
-    public void setHvgv(long hvgv) {
-        this.hvgv = hvgv;
+    public void setHvgt(long hvgt) {
+        this.hvgt = hvgt;
+    }
+
+    public long getHvgd() {
+        return hvgd;
+    }
+
+    public void setHvgd(long hvgd) {
+        this.hvgd = hvgd;
+    }
+
+    public double getDisp() {
+        return disp;
+    }
+
+    public void setDisp(double disp) {
+        this.disp = disp;
     }
 
     public double getTfidf() {
