@@ -90,6 +90,7 @@ public class Processor {
             }
         }
         // printMap(entityMap);
+        System.out.println("entities counted - persisting");
         List<Entity> list = new ArrayList<Entity>(entityMap.values());
         mongo.persistEntities(list);
     }
@@ -295,7 +296,7 @@ public class Processor {
                 countHVGDForDoc(threegram, entityMap, countMap);
             }
         }
-        System.out.println("counted-persisting");
+        System.out.println("counted-persisting for" + param);
         for (Entity e : entityList) {
             if (param.equals("t")) {
                 mongo.updateHVGT(e, countMap.get(e.getValue()));

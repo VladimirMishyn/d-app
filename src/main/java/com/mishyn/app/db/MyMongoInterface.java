@@ -21,6 +21,8 @@ public interface MyMongoInterface {
 
     public List<Entity> getAllEntities();
 
+    public List<Entity> getTopEntitiesBy(String type, int top, String by);
+
     public long getEntitiesCount();
 
     public List<ExtractedDocument> getExtractedDocumentInRange(int start, int end);
@@ -38,4 +40,5 @@ public interface MyMongoInterface {
     public void updateHVGT(Entity key, Integer hvg);
 
     public void updateHVGD(Entity key, Integer hvg);
+
 }

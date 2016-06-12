@@ -10,7 +10,7 @@ import java.util.List;
  * Created by Volodymyr on 11.05.2016.
  */
 public class MongoWorker extends MongoDB {
-    private static String dbName = "diploma";
+    private static String dbName = "diploma_new";
     private MongoDatabase db;
     private MongoCollection mongoCollection;
 

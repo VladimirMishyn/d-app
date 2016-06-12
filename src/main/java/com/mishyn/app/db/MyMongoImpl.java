@@ -111,7 +111,7 @@ public class MyMongoImpl implements MyMongoInterface {
                     entity.setType(document.getString("type"));
                     entity.setAbsFr(document.getLong("absfr").longValue());
                     entity.setTfidf(document.getDouble("tfidf"));
-                    entity.setDisp(document.getDouble("disp"));
+                    //     entity.setDisp(document.getDouble("disp"));
                     List<Document> occurrences = (List<Document>) document.get("docs");
                     List<EntityDocInfo> entityDocInfoList = new ArrayList<EntityDocInfo>();
                     for (Document oc : occurrences) {
@@ -135,6 +135,48 @@ public class MyMongoImpl implements MyMongoInterface {
         final List<Entity> entites = new ArrayList<Entity>();
         if (defaultCollection != null) {
             FindIterable<Document> iterable = defaultCollection.find();
+            iterable.forEach(new Block<Document>() {
+                @Override
+                public void apply(Document document) {
+                    Entity entity = new Entity();
+                    entity.setId(new Integer(document.getLong("_id").toString()));
+                    entity.setValue(document.getString("value"));
+                    entity.setType(document.getString("type"));
+                    entity.setAbsFr(document.getLong("absfr").longValue());
+                    entity.setTfidf(document.getDouble("tfidf"));
+                    entity.setDisp(document.getDouble("disp"));
+                    List<Document> occurrences = (List<Document>) document.get("docs");
+                    List<EntityDocInfo> entityDocInfoList = new ArrayList<EntityDocInfo>();
+                    for (Document oc : occurrences) {
+                        EntityDocInfo entityDocInfo = new EntityDocInfo();
+                        entityDocInfo.setId(oc.getInteger("id"));
+                        entityDocInfo.setLn((List<String>) oc.get("lines"));
+                        entityDocInfoList.add(entityDocInfo);
+                    }
+                    entity.setDocs(entityDocInfoList);
+                    entites.add(entity);
+                }
+            });
+        } else {
+            System.out.println("ERROR");
+        }
+        return entites;
+    }
+
+    @Override
+    public List<Entity> getTopEntitiesBy(String type, int top, String by) {
+        final List<Entity> entites = new ArrayList<Entity>();
+        if (defaultCollection != null) {
+            FindIterable<Document> iterable;
+            if (type != null) {
+                iterable = defaultCollection.find(new Document("type", type))
+                        .sort(new Document(by, -1))
+                        .limit(top);
+            } else {
+                iterable = defaultCollection.find()
+                        .sort(new Document(by, -1))
+                        .limit(top);
+            }
             iterable.forEach(new Block<Document>() {
                 @Override
                 public void apply(Document document) {

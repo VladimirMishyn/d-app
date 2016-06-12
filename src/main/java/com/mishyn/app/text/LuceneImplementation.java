@@ -3,7 +3,10 @@ package com.mishyn.app.text;
 import com.mishyn.app.db.MyMongoImpl;
 import com.mishyn.app.db.MyMongoInterface;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.EnglishMinimalStemFilter;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
+import org.apache.lucene.analysis.standard.ClassicFilter;
+import org.apache.lucene.analysis.standard.ClassicTokenizer;
 import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -28,10 +31,11 @@ public class LuceneImplementation {
 
     public List<String> getNgrams(String text) {
         StringReader reader = new StringReader(text);
-        StandardTokenizer source = new StandardTokenizer(Version.LUCENE_46, reader);
-        TokenStream tokenStream = new StandardFilter(Version.LUCENE_46, source);
+        ClassicTokenizer source = new ClassicTokenizer(Version.LUCENE_46, reader);
+        TokenStream tokenStream = new ClassicFilter(source);
+        EnglishMinimalStemFilter minimalStemFilter = new EnglishMinimalStemFilter(tokenStream);
         // StopFilter stopFilter = new StopFilter(Version.LUCENE_46, tokenStream, StopFilter.makeStopSet(Version.LUCENE_46, this.stopWords));
-        ShingleFilter sf = new ShingleFilter(tokenStream, 2, 3);
+        ShingleFilter sf = new ShingleFilter(minimalStemFilter, 2, 3);
         sf.setOutputUnigrams(true);
 
 
